@@ -23,8 +23,8 @@ if ($user) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/Apartment%20system/assets/style.css">
-    <link rel="stylesheet" href="/Apartment%20system/assets/future.css">
+    <link rel="stylesheet" href="<?= h(asset_url('style.css')) ?>">
+    <link rel="stylesheet" href="<?= h(asset_url('future.css')) ?>">
     <?php
     if (isset($page_head_extras)) {
         if (is_callable($page_head_extras)) {
@@ -38,7 +38,7 @@ if ($user) {
 <body class="site--future">
 <header class="site-header" role="banner">
     <div class="container site-header__inner">
-        <a class="brand" href="/Apartment%20system/index.php">
+        <a class="brand" href="<?= h(app_url('index.php')) ?>">
             <span class="brand__mark" aria-hidden="true">K</span>
             <span class="brand__text">
                 <span class="brand__name"><?= h(APP_NAME) ?></span>
@@ -53,25 +53,25 @@ if ($user) {
         </label>
         <div class="nav-wrap" id="nav-menu">
             <nav class="nav" aria-label="Primary">
-                <a class="nav__link" href="/Apartment%20system/index.php">Home</a>
-                <a class="nav__link" href="/Apartment%20system/about.php">About</a>
-                <a class="nav__link" href="/Apartment%20system/rooms.php">Rooms</a>
-                <a class="nav__link" href="/Apartment%20system/services.php">Services</a>
-                <a class="nav__link" href="/Apartment%20system/contact.php">Contact</a>
-                <a class="nav__link nav__link--emphasis" href="/Apartment%20system/my_bookings.php">Reservations</a>
+                <a class="nav__link" href="<?= h(app_url('index.php')) ?>">Home</a>
+                <a class="nav__link" href="<?= h(app_url('about.php')) ?>">About</a>
+                <a class="nav__link" href="<?= h(app_url('rooms.php')) ?>">Rooms</a>
+                <a class="nav__link" href="<?= h(app_url('services.php')) ?>">Services</a>
+                <a class="nav__link" href="<?= h(app_url('contact.php')) ?>">Contact</a>
+                <a class="nav__link nav__link--emphasis" href="<?= h(app_url('my_bookings.php')) ?>">Reservations</a>
                 <?php if ($user): ?>
                     <span class="nav__account-group">
-                        <a class="nav__profile" href="/Apartment%20system/profile.php" title="<?= h($user['full_name']) ?> (<?= h($user['email']) ?>)" aria-label="Open profile">
+                        <a class="nav__profile" href="<?= h(app_url('profile.php')) ?>" title="<?= h($user['full_name']) ?> (<?= h($user['email']) ?>)" aria-label="Open profile">
                             <span class="nav__profile-initials" aria-hidden="true"><?= h($userInitials) ?></span>
                         </a>
                         <?php if ($user['role'] === 'admin'): ?>
-                            <a class="nav__link" href="<?= h(defined('APP_ADMIN') ? APP_ADMIN . '/index.php' : '/Apartment%20system/admin/index.php') ?>">Admin</a>
+                            <a class="nav__link" href="<?= h(defined('APP_ADMIN') ? APP_ADMIN . '/index.php' : app_url('admin/index.php')) ?>">Admin</a>
                         <?php endif; ?>
-                        <a class="nav__link nav__link--logout" href="/Apartment%20system/logout.php">Logout</a>
+                        <a class="nav__link nav__link--logout" href="<?= h(app_url('logout.php')) ?>">Logout</a>
                     </span>
                 <?php else: ?>
-                    <a class="nav__link" href="/Apartment%20system/register.php">Register</a>
-                    <a class="btn btn--primary" href="/Apartment%20system/login.php">Sign in</a>
+                    <a class="nav__link" href="<?= h(app_url('register.php')) ?>">Register</a>
+                    <a class="btn btn--primary" href="<?= h(app_url('login.php')) ?>">Sign in</a>
                 <?php endif; ?>
             </nav>
         </div>

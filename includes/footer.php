@@ -7,15 +7,15 @@
         </div>
         <div>
             <h4>Explore</h4>
-            <a href="/Apartment%20system/rooms.php">View rooms</a>
-            <a href="/Apartment%20system/services.php">Services</a>
-            <a href="/Apartment%20system/contact.php">Contact</a>
+            <a href="<?= h(app_url('rooms.php')) ?>">View rooms</a>
+            <a href="<?= h(app_url('services.php')) ?>">Services</a>
+            <a href="<?= h(app_url('contact.php')) ?>">Contact</a>
         </div>
         <div>
             <h4>Resident</h4>
-            <a href="/Apartment%20system/my_bookings.php">My reservations</a>
+            <a href="<?= h(app_url('my_bookings.php')) ?>">My reservations</a>
             <?php if (!current_user()): ?>
-            <a href="/Apartment%20system/login.php">Account sign in</a>
+            <a href="<?= h(app_url('login.php')) ?>">Account sign in</a>
             <?php endif; ?>
         </div>
     </div>
@@ -23,7 +23,7 @@
         <small>&copy; <?= (int)date('Y') ?> <?= h(APP_NAME) ?> · Professional apartment management</small>
     </div>
 </footer>
-<script src="/Apartment%20system/assets/nav.js" defer></script>
+<script src="<?= h(asset_url('nav.js')) ?>" defer></script>
 <?php
 if (isset($page_scripts)) {
     if (is_callable($page_scripts)) {

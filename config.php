@@ -21,18 +21,60 @@ function env_value(string $key, string $default = ''): string
     return trim((string) $value);
 }
 
+/**
+ * DB params: explicit DB_* / MYSQL* vars, or Railway-style MYSQL_URL (mysql://user:pass@host:port/db).
+ *
+ * @return array{host:string,port:int,name:string,user:string,pass:string}
+ */
+function mysql_connection_from_env(): array
+{
+    $url = env_value('MYSQL_URL', '');
+    if ($url !== '') {
+        $normalized = preg_replace('#^mysql2:#', 'mysql:', $url, 1) ?? $url;
+        if (str_starts_with($normalized, 'mysql://')) {
+            $u = parse_url($normalized);
+            if (is_array($u) && !empty($u['host'])) {
+                $path = isset($u['path']) ? trim((string) $u['path'], '/') : '';
+
+                return [
+                    'host' => (string) $u['host'],
+                    'port' => isset($u['port']) ? (int) $u['port'] : 3306,
+                    'name' => $path !== '' ? $path : env_value('MYSQLDATABASE', 'kasuga_residences'),
+                    'user' => isset($u['user']) ? rawurldecode((string) $u['user']) : env_value('MYSQLUSER', 'root'),
+                    'pass' => isset($u['pass']) ? rawurldecode((string) $u['pass']) : env_value('MYSQLPASSWORD', ''),
+                ];
+            }
+        }
+    }
+
+    $dbPortRaw = env_value('DB_PORT', env_value('MYSQLPORT', '3306'));
+    $dbPort = is_numeric($dbPortRaw) ? (int) $dbPortRaw : 3306;
+
+    return [
+        'host' => env_value('DB_HOST', env_value('MYSQLHOST', '127.0.0.1')),
+        'port' => $dbPort,
+        'name' => env_value('DB_NAME', env_value('MYSQLDATABASE', 'kasuga_residences')),
+        'user' => env_value('DB_USER', env_value('MYSQLUSER', 'root')),
+        'pass' => env_value('DB_PASS', env_value('MYSQLPASSWORD', '')),
+    ];
+}
+
 date_default_timezone_set(env_value('APP_TIMEZONE', 'Asia/Manila'));
 
 define('APP_NAME', 'Kasuga Residences');
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', 3306);
-define('DB_NAME', 'kasuga_residences');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+
+$dbConn = mysql_connection_from_env();
+define('DB_HOST', $dbConn['host']);
+define('DB_PORT', $dbConn['port']);
+define('DB_NAME', $dbConn['name']);
+define('DB_USER', $dbConn['user']);
+define('DB_PASS', $dbConn['pass']);
 define('DB_CHARSET', 'utf8mb4');
 
-/** Web path to app root (no trailing slash) */
-define('APP_BASE', env_value('APP_BASE', '/Apartment%20system'));
+/** Web path to app root (no trailing slash). Empty = domain root (typical on Railway). */
+$railwayDb = env_value('MYSQLHOST', '') !== '' || env_value('MYSQL_URL', '') !== '';
+$defaultAppBase = $railwayDb ? '' : '/Apartment%20system';
+define('APP_BASE', env_value('APP_BASE', $defaultAppBase));
 define('APP_ADMIN', APP_BASE . '/admin');
 
 /** Absolute site URL for password-reset emails (no trailing slash). Leave empty to build from the current request. */
