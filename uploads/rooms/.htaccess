@@ -1,0 +1,7 @@
+# Uploaded files only — no PHP execution in this folder
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<FilesMatch "\.(php|phtml|php\d?)$">
+  Require all denied
+</FilesMatch>

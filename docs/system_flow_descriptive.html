@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kasuga Residences — System Flow (Descriptive)</title>
+  <style>
+    @page { margin: 2cm; }
+    body { font-family: DejaVu Sans, sans-serif; font-size: 10pt; line-height: 1.35; color: #111; }
+    h1 { font-size: 16pt; margin: 0 0 12pt 0; text-align: center; }
+    .subtitle { text-align: center; font-size: 10pt; margin: 0 0 16pt 0; }
+    h2 { font-size: 12pt; margin: 14pt 0 8pt 0; border-bottom: 1px solid #ccc; padding-bottom: 4pt; }
+    h3 { font-size: 10.5pt; margin: 10pt 0 6pt 0; }
+    p { margin: 0 0 8pt 0; text-align: justify; }
+    table { width: 100%; border-collapse: collapse; margin: 8pt 0 12pt 0; font-size: 9pt; }
+    th, td { border: 1px solid #333; padding: 5pt 6pt; vertical-align: top; }
+    th { background: #eee; text-align: left; }
+    ol, ul { margin: 6pt 0 10pt 18pt; padding-left: 0; }
+    li { margin-bottom: 4pt; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+<h1>Kasuga Residences — Apartment Reservation System</h1>
+<p class="subtitle"><strong>Kasuga Residences</strong> is a web-based apartment reservation system that lets visitors browse published units and register as tenants, lets logged-in tenants request stays and complete checkout (including payment or pay-later paths), and track reservations, while authorized administrators manage rooms, bookings, users, announcements, and reviews. The stack is <strong>PHP</strong>, <strong>MySQL</strong>, and <strong>server-side sessions</strong> (e.g. XAMPP).</p>
+
+<h2>Users</h2>
+<table>
+  <thead>
+    <tr><th>User</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Guest</strong></td>
+      <td>Any visitor who can use public pages (home, room catalog, about, services, contact) without logging in.</td>
+    </tr>
+    <tr>
+      <td><strong>Tenant</strong></td>
+      <td>A registered user (role tenant) who can book rooms, use checkout and My reservations, edit profile, and submit reviews for eligible stays.</td>
+    </tr>
+    <tr>
+      <td><strong>Administrator</strong></td>
+      <td>A user with role admin who uses the /admin area to manage catalog, bookings, users, announcements, and reviews.</td>
+    </tr>
+    <tr>
+      <td><strong>System</strong></td>
+      <td>The PHP application plus MySQL: validation, CSRF checks, optional Cloudflare Turnstile on sensitive forms, session handling, and mail (e.g. password reset) when SMTP is configured.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Start of the process</h2>
+<p>The process begins when someone opens the site. <strong>Guests</strong> see public content and can register or log in. <strong>Tenants</strong> with an active session are treated as logged in and can open booking and account pages. <strong>Administrators</strong> who sign in with an admin account use the admin dashboard instead of the public tenant-only tools.</p>
+
+<h2>Step-by-step process</h2>
+
+<h3>A. Tenant registration</h3>
+<ol>
+  <li>The user opens the site and goes to <strong>Register</strong>.</li>
+  <li>The user enters full name, email, phone, and password (and completes Turnstile if enabled).</li>
+  <li>The system validates input (format, strength, CSRF, captcha).
+    <ul>
+      <li>If validation fails → the system shows field or general errors and stops.</li>
+      <li>If the <strong>email is already registered</strong> → the system rejects registration and shows an error.</li>
+    </ul>
+  </li>
+  <li>If validation passes, the system <strong>hashes the password</strong>, inserts a new row in <strong>users</strong> with role <strong>tenant</strong>, and sets a success flash message.</li>
+  <li>The user is redirected to <strong>Login</strong>.</li>
+</ol>
+
+<h3>B. Tenant login</h3>
+<ol>
+  <li>The user opens <strong>Login</strong> and enters email and password (and Turnstile if enabled).</li>
+  <li>The system verifies CSRF and captcha.
+    <ul><li>If captcha fails → login does not proceed.</li></ul>
+  </li>
+  <li>The system looks up <strong>users</strong> by email and verifies the password.
+    <ul>
+      <li>If credentials are wrong → the system shows an error.</li>
+      <li>If credentials are correct → the system <strong>regenerates the session id</strong>, stores <strong>user_id</strong> in the session, sets a success flash, and redirects (commonly to the home page).</li>
+    </ul>
+  </li>
+</ol>
+
+<h3>C. Guest browsing (no login)</h3>
+<ol>
+  <li>A <strong>guest</strong> opens <strong>Home</strong>, <strong>Rooms</strong>, <strong>About</strong>, <strong>Services</strong>, or <strong>Contact</strong> as implemented on the site.</li>
+  <li>The <strong>home</strong> page can show <strong>active announcements</strong> intended for the public (from <strong>announcements</strong>).</li>
+  <li><strong>Room listings</strong> read <strong>rooms</strong> (and gallery data). Only <strong>active</strong> rooms appear where the code filters. Ratings may be aggregated from <strong>reviews</strong>.</li>
+</ol>
+
+<div class="page-break"></div>
+
+<h3>D. Booking and checkout (tenant)</h3>
+<ol>
+  <li>The <strong>tenant</strong> logs in and opens the room catalog, then chooses <strong>Book</strong> on an eligible room (<strong>book.php</strong> with <strong>room_id</strong>).</li>
+  <li>The system requires login; if the room is missing, inactive, or not open for booking → the system flashes an error and returns to the catalog.</li>
+  <li>The tenant enters stay details (check-in/out with times, guest count, notes) and a <strong>payment choice</strong> (e.g. pay now, pay later, pay at cashier).</li>
+  <li>The system validates the request and checks <strong>date overlap</strong> against existing <strong>bookings</strong> for that room in <strong>pending</strong> or <strong>confirmed</strong> status.
+    <ul><li>If the schedule conflicts → the system shows an error.</li></ul>
+  </li>
+  <li>If the tenant already has a <strong>pending</strong> booking for the same room and dates, the system may reuse that booking for checkout or send the user to <strong>My reservations</strong>, depending on payment choice and whether payment was already submitted.</li>
+  <li>Otherwise the system may store a <strong>checkout draft in the session</strong> and redirect to <strong>checkout.php</strong>, or attach a booking id for continuing payment.</li>
+  <li>On <strong>checkout.php</strong>, the tenant reviews totals and completes the flow: confirm or abandon draft, attach payment proof / receipt fields / cashier or pay-later paths as implemented.</li>
+  <li>The system writes or updates <strong>bookings</strong> (amounts, status, payment timestamps, receipt reference, etc.) and redirects with flash messages, often to <strong>My reservations</strong>.</li>
+</ol>
+
+<h3>E. My reservations, profile, and reviews</h3>
+<ol>
+  <li>The tenant opens <strong>My reservations</strong> (<strong>my_bookings.php</strong>) to see their <strong>bookings</strong> and statuses.</li>
+  <li>The tenant opens <strong>Profile</strong> to update account fields stored in <strong>users</strong>.</li>
+  <li>To <strong>review</strong> a stay (<strong>review.php</strong> with booking id), the system only allows bookings in <strong>confirmed</strong> or <strong>checked_out</strong> status for that user.
+    <ul><li>If allowed, the tenant submits a <strong>1–5</strong> rating and optional <strong>comment</strong> (length rules enforced); the system inserts <strong>reviews</strong> and returns to <strong>My reservations</strong>.</li></ul>
+  </li>
+</ol>
+
+<h3>F. Administrator — rooms and catalog</h3>
+<ol>
+  <li>An <strong>admin</strong> logs in (same login page; account must have <strong>role = admin</strong>).</li>
+  <li>The admin opens <strong>/admin</strong> (<strong>admin.php</strong> redirects to <strong>admin/index.php</strong>); <strong>bootstrap.php</strong> calls <strong>require_admin()</strong> on protected admin pages.</li>
+  <li>From <strong>Rooms</strong> (and related editors), the admin creates/edits <strong>rooms</strong> (code, title, description, rate, capacity, images, active flag, occupancy where used).</li>
+  <li><strong>Gallery</strong> images are tied to <strong>room_images</strong> / configured URLs per the admin tools.</li>
+</ol>
+
+<h3>G. Administrator — bookings and notifications</h3>
+<ol>
+  <li>The admin opens <strong>Bookings</strong> to list and manage reservations.</li>
+  <li>The admin can update <strong>status</strong>, payment fields, and operational fields (e.g. early checkout date) consistent with the admin UI.</li>
+  <li><strong>Notifications</strong> (polling) surface events such as <strong>new bookings</strong> and <strong>payment submitted</strong>, using timestamps on <strong>bookings</strong> and optional “last seen” tracking for admins.</li>
+</ol>
+
+<div class="page-break"></div>
+
+<h3>H. Administrator — users, announcements, reviews, archive, export</h3>
+<ol>
+  <li><strong>Users</strong> — the admin manages <strong>users</strong> (e.g. roles or basic account maintenance allowed by the pages).</li>
+  <li><strong>Announcements</strong> — the admin maintains <strong>announcements</strong> (title, body, audience such as public/tenant/both, active flag, ordering).</li>
+  <li><strong>Reviews</strong> — the admin can view or moderate per the admin reviews page.</li>
+  <li><strong>Archive / export</strong> — the admin can use archive views and exported booking reports where implemented.</li>
+</ol>
+
+<h3>I. Password reset</h3>
+<ol>
+  <li>The user opens <strong>Forgot password</strong> and submits identifying input (email flow per the app).</li>
+  <li>If a matching account exists, the system creates a token row in <strong>password_reset_tokens</strong> and sends an email with a reset link (SMTP when configured).</li>
+  <li>On <strong>Reset password</strong>, the user sets a new password; the system updates <strong>users.password_hash</strong> and clears or expires tokens appropriately.</li>
+</ol>
+
+<h3>J. Logout</h3>
+<ol>
+  <li>The user opens <strong>Logout</strong>; the system clears and destroys the session, starts a clean session, sets a success flash, and redirects to the public home page.</li>
+</ol>
+
+<h2>System actions summary</h2>
+<table>
+  <thead>
+    <tr><th>Action</th><th>What the system does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Registration</td><td>Validates fields, CSRF, Turnstile; rejects duplicate email; hashes password; inserts users (tenant).</td></tr>
+    <tr><td>Login</td><td>Validates CSRF/Turnstile; verifies password; sets user_id in session; regenerates session id.</td></tr>
+    <tr><td>Browse rooms</td><td>Reads rooms (+ gallery); may show ratings from reviews.</td></tr>
+    <tr><td>Book</td><td>Requires login; checks room availability rules; prevents bad overlaps; session draft or pending booking handoff to checkout.php.</td></tr>
+    <tr><td>Checkout</td><td>Finalizes bookings row(s), payment metadata, statuses; clears or reuses session draft.</td></tr>
+    <tr><td>My reservations</td><td>Lists the tenant’s bookings.</td></tr>
+    <tr><td>Review</td><td>Only for confirmed / checked_out bookings; inserts reviews.</td></tr>
+    <tr><td>Admin operations</td><td>require_admin(); CRUD/manage rooms, bookings, users, announcements, reviews, export/archive as built.</td></tr>
+    <tr><td>Password reset</td><td>Token in password_reset_tokens; email link; update users password.</td></tr>
+    <tr><td>Logout</td><td>Destroys session; redirect home.</td></tr>
+  </tbody>
+</table>
+
+<h2>End of the process</h2>
+<p>The process effectively ends when:</p>
+<ul>
+  <li>A <strong>tenant’s stay</strong> reaches a terminal state the app uses (confirmed, checked out, cancelled, etc.) and any payment/update steps the admin requires are done.</li>
+  <li>A <strong>tenant submits a review</strong> for an eligible booking and returns to My reservations.</li>
+  <li>An <strong>administrator</strong> finishes management tasks (bookings adjusted, rooms updated, announcements published) and <strong>logs out</strong>.</li>
+  <li>A <strong>guest</strong> leaves after browsing or after registering / using contact without making a reservation.</li>
+</ul>
+
+</body>
+</html>
