@@ -11,7 +11,7 @@ if (is_post() && verify_csrf($_POST['csrf'] ?? null) && !empty($_POST['abandon_c
         unset($_SESSION[$proofKeyEarly]['_draft']);
     }
     $_SESSION['flash_success'] = 'Checkout discarded. No reservation was created.';
-    redirect('/Apartment%20system/my_bookings.php');
+    redirect('my_bookings.php');
 }
 
 $checkoutProofSessKey = 'checkout_payment_proof_code';
@@ -56,7 +56,7 @@ if ($bookingId >= 1) {
     if (!$roomRow || !room_is_open_for_booking($roomRow)) {
         booking_checkout_draft_clear();
         $_SESSION['flash_error'] = 'This room is no longer available. Start again from the rooms catalog.';
-        redirect('/Apartment%20system/rooms.php');
+        redirect('rooms.php');
     }
     $overlap = db()->prepare("
         SELECT COUNT(*) FROM bookings
@@ -99,13 +99,13 @@ if ($bookingId >= 1) {
 } else {
     unset($_SESSION['flash_success'], $_SESSION['pending_checkout_booking_id']);
     $_SESSION['flash_error'] = 'No reservation in progress. Choose a room to book or open My reservations.';
-    redirect('/Apartment%20system/my_bookings.php');
+    redirect('my_bookings.php');
 }
 
 if (!$booking) {
     unset($_SESSION['flash_success'], $_SESSION['pending_checkout_booking_id']);
     $_SESSION['flash_error'] = 'Booking not found. If you have a stay in progress, open My reservations and use “Finish checkout”.';
-    redirect('/Apartment%20system/my_bookings.php');
+    redirect('my_bookings.php');
 }
 
 $roomDescription = trim((string) ($booking['room_description'] ?? ''));
@@ -234,7 +234,7 @@ if (is_post()) {
                                 unset($_SESSION[$checkoutProofSessKey]['_draft']);
                                 sync_room_occupancy_from_stays((int) $draft['room_id']);
                                 $_SESSION['flash_success'] = 'Reservation confirmed. Payment proof was submitted successfully.';
-                                redirect('/Apartment%20system/my_bookings.php');
+                                redirect('my_bookings.php');
                             }
                             $pdo->rollBack();
                         } elseif ($payChoice === 'pay_later' || $payChoice === 'pay_cashier') {
@@ -264,7 +264,7 @@ if (is_post()) {
                             $_SESSION['flash_success'] = $payChoice === 'pay_cashier'
                                 ? 'Reservation saved. Pay at the cashier when the property instructs you—your booking stays pending until staff confirm.'
                                 : 'Reservation request saved. You can finish payment later from My reservations.';
-                            redirect('/Apartment%20system/my_bookings.php');
+                            redirect('my_bookings.php');
                         } else {
                             $pdo->rollBack();
                             $errors[] = 'Invalid payment option.';
@@ -305,11 +305,11 @@ if (is_post()) {
                 $update->execute([$paidAmount, $receiptRef, db_timestamp(), $bookingId, (int) current_user()['id']]);
                 if ($update->rowCount() === 0) {
                     $_SESSION['flash_error'] = 'Payment proof could not be submitted (it may have been updated).';
-                    redirect('/Apartment%20system/my_bookings.php');
+                    redirect('my_bookings.php');
                 }
                 unset($_SESSION[$checkoutProofSessKey][$bookingId]);
                 $_SESSION['flash_success'] = 'Payment received. Your reservation is now confirmed.';
-                redirect('/Apartment%20system/my_bookings.php');
+                redirect('my_bookings.php');
             }
         }
     }
@@ -358,7 +358,7 @@ $checkoutSub = $isCashierDraft
                 <?php endif; ?>
             </div>
             <?php if ($draftBlocked): ?>
-            <div class="alert error" role="status">Someone else may have booked these dates. Go back to <a href="/Apartment%20system/rooms.php">Rooms</a> and choose different dates.</div>
+            <div class="alert error" role="status">Someone else may have booked these dates. Go back to <a href="<?= h(app_url('rooms.php')) ?>">Rooms</a> and choose different dates.</div>
             <?php endif; ?>
             <?php if ($roomDescription !== ''): ?>
             <div class="book-room-desc checkout-page__room-desc" aria-label="Room description">
@@ -393,7 +393,7 @@ $checkoutSub = $isCashierDraft
                         This reservation cannot be paid online in its current state.
                     <?php endif; ?>
                 </div>
-                <p><a class="btn btn--primary" href="/Apartment%20system/my_bookings.php">Back to my reservations</a></p>
+                <p><a class="btn btn--primary" href="<?= h(app_url('my_bookings.php')) ?>">Back to my reservations</a></p>
             <?php elseif ($canSubmitPayLater): ?>
                 <h2 class="h3-like checkout-page__receipt-heading"><?= $isCashierDraft ? 'Pay at cashier' : 'Reservation request' ?></h2>
                 <p class="checkout-page__receipt-intro"><?= $isCashierDraft

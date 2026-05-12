@@ -5,4 +5,4 @@ session_unset();
 session_destroy();
 session_start();
 $_SESSION['flash_success'] = 'You have been logged out securely.';
-redirect('/Apartment%20system/index.php');
+redirect(app_url('index.php'));

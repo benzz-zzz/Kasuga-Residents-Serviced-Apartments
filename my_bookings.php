@@ -48,7 +48,7 @@ if (is_post() && verify_csrf($_POST['csrf'] ?? null)) {
     } elseif ($intent !== '') {
         $_SESSION['flash_error'] = 'Invalid request.';
     }
-    redirect('/Apartment%20system/my_bookings.php');
+    redirect('my_bookings.php');
 }
 
 $stmt = db()->prepare("
@@ -91,7 +91,7 @@ require_once __DIR__ . '/includes/header.php';
         || ($nextStay['status'] === 'confirmed' && (string) $nextStay['check_in'] > $today);
     ?>
     <?php if ($nextStay['status'] === 'pending' && empty($nextStay['payment_submitted_at'])): ?>
-        <a class="btn btn--primary" href="/Apartment%20system/checkout.php?booking_id=<?= (int)$nextStay['id'] ?>">Finish checkout</a>
+        <a class="btn btn--primary" href="<?= h(app_url('checkout.php?booking_id=' . (int)$nextStay['id'])) ?>">Finish checkout</a>
     <?php elseif ($nextStay['status'] === 'pending' && !empty($nextStay['payment_submitted_at'])): ?>
         <span class="table-muted">Payment proof submitted.</span>
     <?php endif; ?>
@@ -164,11 +164,11 @@ require_once __DIR__ . '/includes/header.php';
                         || ($booking['status'] === 'confirmed' && (string) $booking['check_in'] > $today);
                     ?>
                     <?php if ($booking['status'] === 'pending' && empty($booking['payment_submitted_at'])): ?>
-                        <a class="btn btn--primary" href="/Apartment%20system/checkout.php?booking_id=<?= (int)$booking['id'] ?>">Checkout</a>
+                        <a class="btn btn--primary" href="<?= h(app_url('checkout.php?booking_id=' . (int)$booking['id'])) ?>">Checkout</a>
                     <?php elseif ($booking['status'] === 'pending' && !empty($booking['payment_submitted_at'])): ?>
                         <span class="table-muted">Payment proof submitted</span>
                     <?php elseif ($booking['status'] === 'checked_out'): ?>
-                        <a class="btn btn--ghost" href="/Apartment%20system/review.php?booking_id=<?= (int)$booking['id'] ?>">Review</a>
+                        <a class="btn btn--ghost" href="<?= h(app_url('review.php?booking_id=' . (int)$booking['id'])) ?>">Review</a>
                         <form method="post" class="booking-actions__form" onsubmit="return confirm('Remove this completed reservation from your list?');" aria-label="Remove completed reservation">
                             <input type="hidden" name="csrf" value="<?= h(generate_csrf()) ?>">
                             <input type="hidden" name="intent" value="remove_done">
@@ -183,7 +183,7 @@ require_once __DIR__ . '/includes/header.php';
                             <button type="submit" class="btn btn--ghost">Remove</button>
                         </form>
                     <?php elseif ($booking['status'] === 'confirmed'): ?>
-                        <a class="btn btn--ghost" href="/Apartment%20system/review.php?booking_id=<?= (int)$booking['id'] ?>">Review</a>
+                        <a class="btn btn--ghost" href="<?= h(app_url('review.php?booking_id=' . (int)$booking['id'])) ?>">Review</a>
                     <?php else: ?>
                         <span class="table-muted">—</span>
                     <?php endif; ?>

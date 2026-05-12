@@ -39,8 +39,8 @@ require_once __DIR__ . '/includes/header.php';
     <h1 id="hero-heading">Apartments designed for longer stays—with hotel-grade clarity</h1>
     <p>Choose a suite, see real availability and monthly rates, and manage your reservation in one place. Built for professionals, relocating families, and anyone who values a calm, well-run building.</p>
     <div class="hero__actions">
-        <a class="btn btn--primary" href="/Apartment%20system/rooms.php">View available apartments</a>
-        <a class="btn btn--ghost" href="/Apartment%20system/services.php">Building amenities</a>
+        <a class="btn btn--primary" href="<?= h(app_url('rooms.php')) ?>">View available apartments</a>
+        <a class="btn btn--ghost" href="<?= h(app_url('services.php')) ?>">Building amenities</a>
     </div>
 </section>
 
@@ -109,7 +109,7 @@ require_once __DIR__ . '/includes/header.php';
                         <span class="room-card__price">PHP <?= number_format((float)$room['monthly_rate'], 2) ?> <small>per day</small></span>
                     </div>
                     <?php if (room_is_open_for_booking($room)): ?>
-                        <a class="btn btn--primary" href="/Apartment%20system/book.php?room_id=<?= (int)$room['id'] ?>">Reserve this apartment</a>
+                        <a class="btn btn--primary" href="<?= h(app_url('book.php?room_id=' . (int)$room['id'])) ?>">Reserve this apartment</a>
                     <?php else: ?>
                         <span class="btn btn--ghost btn--block" style="pointer-events:none;opacity:0.85">Not available to book</span>
                     <?php endif; ?>

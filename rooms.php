@@ -65,7 +65,7 @@ require_once __DIR__ . '/includes/header.php';
                     <span class="room-card__price">PHP <?= number_format((float)$room['monthly_rate'], 2) ?> <small>per day</small></span>
                 </div>
                 <?php if (room_is_open_for_booking($room)): ?>
-                    <a class="btn btn--primary" href="/Apartment%20system/book.php?room_id=<?= (int)$room['id'] ?>">Select this room</a>
+                    <a class="btn btn--primary" href="<?= h(app_url('book.php?room_id=' . (int)$room['id'])) ?>">Select this room</a>
                 <?php else: ?>
                     <span class="btn btn--ghost btn--block" style="pointer-events:none;opacity:0.85">Not available to book</span>
                 <?php endif; ?>

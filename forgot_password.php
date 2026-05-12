@@ -31,11 +31,11 @@ if (is_post()) {
                     $errors[] = 'We could not send the email. Check PHP mail / SMTP settings, or try again later.';
                 } else {
                     $_SESSION['flash_success'] = 'Check your inbox for a reset link. It expires in one hour.';
-                    redirect('/Apartment%20system/login.php');
+                    redirect('login.php');
                 }
             } else {
                 $_SESSION['flash_success'] = 'If an account exists for that email, we sent reset instructions.';
-                redirect('/Apartment%20system/login.php');
+                redirect('login.php');
             }
         }
     }
@@ -62,7 +62,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
             <button type="submit" class="btn btn--primary btn--block">Send reset link</button>
         </form>
-        <p class="form-footer"><a href="/Apartment%20system/login.php">Back to sign in</a></p>
+        <p class="form-footer"><a href="<?= h(app_url('login.php')) ?>">Back to sign in</a></p>
     </div>
 </div>
 <?php if (captcha_is_enabled()): ?>

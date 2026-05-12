@@ -65,10 +65,10 @@ require_once __DIR__ . '/includes/header.php';
                 <?php foreach ($captchaErrors as $error): ?><div class="field-error"><?= h($error) ?></div><?php endforeach; ?>
             <?php endif; ?>
 
-            <p class="form-note"><a href="/Apartment%20system/forgot_password.php">Forgot password?</a></p>
+            <p class="form-note"><a href="<?= h(app_url('forgot_password.php')) ?>">Forgot password?</a></p>
             <button type="submit" class="btn btn--primary btn--block">Sign in</button>
         </form>
-        <p class="form-footer">No account yet? <a href="/Apartment%20system/register.php">Create one</a></p>
+        <p class="form-footer">No account yet? <a href="<?= h(app_url('register.php')) ?>">Create one</a></p>
     </div>
 </div>
 <?php if (captcha_is_enabled()): ?>

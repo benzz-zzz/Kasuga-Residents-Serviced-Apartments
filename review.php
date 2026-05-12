@@ -15,7 +15,7 @@ $booking = $stmt->fetch();
 
 if (!$booking) {
     $_SESSION['flash_error'] = 'Only completed stays (confirmed or checked out) can be reviewed.';
-    redirect('/Apartment%20system/my_bookings.php');
+    redirect('my_bookings.php');
 }
 
 $errors = [];
@@ -38,7 +38,7 @@ if (is_post()) {
             ');
             $insert->execute([(int)current_user()['id'], (int)$booking['room_id'], $rating, $comment, db_timestamp()]);
             $_SESSION['flash_success'] = 'Thank you for your feedback.';
-            redirect('/Apartment%20system/my_bookings.php');
+            redirect('my_bookings.php');
         }
     }
 }

@@ -7,7 +7,7 @@ require_login();
 $me = current_user();
 if (!$me) {
     $_SESSION['flash_error'] = 'Please login first.';
-    redirect('/Apartment%20system/login.php');
+    redirect('login.php');
 }
 
 $errors = [];
@@ -69,7 +69,7 @@ if (is_post()) {
                 $update->execute([$fullName, $email, $phone, (int)$me['id']]);
             }
             $_SESSION['flash_success'] = 'Profile updated successfully.';
-            redirect('/Apartment%20system/profile.php');
+            redirect('profile.php');
         }
     }
 }

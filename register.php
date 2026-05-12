@@ -60,7 +60,7 @@ if (is_post()) {
                     db_timestamp(),
                 ]);
                 $_SESSION['flash_success'] = 'Registration complete. Please login.';
-                redirect('/Apartment%20system/login.php');
+                redirect('login.php');
             }
         }
     }
@@ -141,7 +141,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
             <button type="submit" class="btn btn--primary btn--block">Create account</button>
         </form>
-        <p class="form-footer">Already have an account? <a href="/Apartment%20system/login.php">Sign in</a></p>
+        <p class="form-footer">Already have an account? <a href="<?= h(app_url('login.php')) ?>">Sign in</a></p>
     </div>
 </div>
 <?php if (captcha_is_enabled()): ?>

@@ -23,7 +23,7 @@ function require_login(): void
 {
     if (!current_user()) {
         $_SESSION['flash_error'] = 'Please login first.';
-        redirect('/Apartment%20system/login.php');
+        redirect(app_url('login.php'));
     }
 }
 
@@ -32,7 +32,7 @@ function require_admin(): void
     $user = current_user();
     if (!$user || $user['role'] !== 'admin') {
         $_SESSION['flash_error'] = 'Admin access only.';
-        redirect('/Apartment%20system/index.php');
+        redirect(app_url('index.php'));
     }
 }
 

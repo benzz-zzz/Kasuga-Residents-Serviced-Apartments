@@ -1,6 +1,33 @@
+# =============================================================================
+# Railway config-as-code (build / deploy only).
+# See: https://docs.railway.com/config-as-code/reference
+#
+# IMPORTANT: Ang Railway schema *walay* suporta para sa service env vars dinhi.
+# Ang secrets / app config i-set gihapon sa: Project → imong PHP service → Variables
+# (RAW editor: pwede nimo i-paste ang sulod sa imong .env nga wala sa git).
+#
+# MySQL: add "MySQL" plugin → sa PHP service Variables → "Reference" ang MYSQL_URL
+# (ug / o MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE, MYSQLPORT).
+#
+# Parehas nga ngalan sa imong .env / .env.example (set sa dashboard, dili sa git):
+#   APP_NAME, APP_TIMEZONE, APP_BASE, APP_PUBLIC_URL,
+#   DB_CHARSET, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS,
+#   PROPERTY_NAME, PROPERTY_ADDRESS, PROPERTY_LAT, PROPERTY_LNG, PROPERTY_MAP_ZOOM,
+#   ROOM_GALLERY_MAX_IMAGES, ROOM_GALLERY_PUBLIC_MAX,
+#   MAIL_FROM, MAIL_FROM_NAME, MAIL_SMTP_HOST, MAIL_SMTP_PORT, MAIL_SMTP_ENCRYPTION,
+#   MAIL_SMTP_USER, MAIL_SMTP_PASS,
+#   RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY,
+#   TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, CAPTCHA_BYPASS_LOCAL
+#
+# CLI (human / CI): railway variable set KEY=value
+# https://docs.railway.com/cli/variable
+# =============================================================================
+
 [build]
 builder = "NIXPACKS"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+healthcheckPath = "/"
+healthcheckTimeout = 100

@@ -12,12 +12,12 @@ $room = $stmt->fetch();
 
 if (!$room) {
     $_SESSION['flash_error'] = 'Room not found.';
-    redirect('/Apartment%20system/rooms.php');
+    redirect('rooms.php');
 }
 
 if (!room_is_open_for_booking($room)) {
     $_SESSION['flash_error'] = 'This apartment is reserved or not open for reservation right now.';
-    redirect('/Apartment%20system/rooms.php');
+    redirect('rooms.php');
 }
 
 $errors = [];
@@ -64,18 +64,18 @@ if (is_post()) {
                 $existingId = (int) $dupRow['id'];
                 if (!empty($dupRow['payment_submitted_at'])) {
                     $_SESSION['flash_success'] = 'You already submitted payment for this reservation. Track it under My reservations.';
-                    redirect('/Apartment%20system/my_bookings.php');
+                    redirect('my_bookings.php');
                 }
                 if ($paymentChoice === 'pay_later' || $paymentChoice === 'pay_cashier') {
                     unset($_SESSION['pending_checkout_booking_id']);
                     booking_checkout_draft_clear();
                     $_SESSION['flash_success'] = 'You already have a pending reservation for these dates. Use My reservations to finish checkout when you are ready.';
-                    redirect('/Apartment%20system/my_bookings.php');
+                    redirect('my_bookings.php');
                 }
                 $_SESSION['pending_checkout_booking_id'] = $existingId;
                 booking_checkout_draft_clear();
                 $_SESSION['flash_success'] = 'You already have a reservation for these dates. Continue to checkout.';
-                redirect('/Apartment%20system/checkout.php?booking_id=' . $existingId);
+                redirect('checkout.php?booking_id=' . $existingId);
             }
 
             $overlap = db()->prepare("
@@ -105,14 +105,14 @@ if (is_post()) {
                 unset($_SESSION['pending_checkout_booking_id']);
                 if ($paymentChoice === 'pay_later') {
                     $_SESSION['flash_success'] = 'Review your request on the next screen, then submit to save your reservation.';
-                    redirect('/Apartment%20system/checkout.php');
+                    redirect('checkout.php');
                 }
                 if ($paymentChoice === 'pay_cashier') {
                     $_SESSION['flash_success'] = 'Review your stay on the next screen, then submit. You will pay in person at the cashier.';
-                    redirect('/Apartment%20system/checkout.php');
+                    redirect('checkout.php');
                 }
                 $_SESSION['flash_success'] = 'Review your stay and submit payment to confirm your reservation.';
-                redirect('/Apartment%20system/checkout.php');
+                redirect('checkout.php');
             }
         }
     }

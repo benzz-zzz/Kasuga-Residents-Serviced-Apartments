@@ -1,24 +1,39 @@
 <?php
 declare(strict_types=1);
 
+$composerAutoload = __DIR__ . '/vendor/autoload.php';
+if (is_file($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
+if (class_exists(\Dotenv\Dotenv::class)) {
+    \Dotenv\Dotenv::createImmutable(__DIR__)->safeLoad();
+}
+
 /**
- * 1) Create database in phpMyAdmin: CREATE DATABASE kasuga_residences CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
- * 2) Edit DB_* below (XAMPP default is often root with empty password).
- * 3) Open the site once; tables are created automatically, or import sql/schema.sql manually.
+ * 1) Copy .env.example to .env in the project root and set values.
+ * 2) Open the site once; tables bootstrap automatically, or import sql/schema.sql.
  */
 session_start();
 
 /**
- * Read environment variable with fallback.
+ * Read environment variable. Order: real process env first (Railway / Docker inject here via getenv),
+ * then Dotenv-populated $_ENV / $_SERVER, then default.
  */
 function env_value(string $key, string $default = ''): string
 {
-    $value = getenv($key);
-    if ($value === false) {
-        return $default;
+    $g = getenv($key);
+    if ($g !== false) {
+        return trim((string) $g);
+    }
+    if (array_key_exists($key, $_ENV)) {
+        return trim((string) $_ENV[$key]);
+    }
+    if (array_key_exists($key, $_SERVER) && !str_starts_with($key, 'HTTP_')) {
+        return trim((string) $_SERVER[$key]);
     }
 
-    return trim((string) $value);
+    return $default;
 }
 
 /**
@@ -61,7 +76,8 @@ function mysql_connection_from_env(): array
 
 date_default_timezone_set(env_value('APP_TIMEZONE', 'Asia/Manila'));
 
-define('APP_NAME', 'Kasuga Residences');
+$appName = env_value('APP_NAME', '');
+define('APP_NAME', $appName !== '' ? $appName : 'Kasuga Residences');
 
 $dbConn = mysql_connection_from_env();
 define('DB_HOST', $dbConn['host']);
@@ -69,58 +85,45 @@ define('DB_PORT', $dbConn['port']);
 define('DB_NAME', $dbConn['name']);
 define('DB_USER', $dbConn['user']);
 define('DB_PASS', $dbConn['pass']);
-define('DB_CHARSET', 'utf8mb4');
+define('DB_CHARSET', env_value('DB_CHARSET', 'utf8mb4'));
 
 /** Web path to app root (no trailing slash). Empty = domain root (typical on Railway). */
 $railwayDb = env_value('MYSQLHOST', '') !== '' || env_value('MYSQL_URL', '') !== '';
-$defaultAppBase = $railwayDb ? '' : '/Apartment%20system';
+$onRailway = env_value('RAILWAY_ENVIRONMENT', '') !== '' || env_value('RAILWAY_PUBLIC_DOMAIN', '') !== '';
+$defaultAppBase = ($railwayDb || $onRailway) ? '' : '/Apartment%20system';
 define('APP_BASE', env_value('APP_BASE', $defaultAppBase));
 define('APP_ADMIN', APP_BASE . '/admin');
 
-/** Absolute site URL for password-reset emails (no trailing slash). Leave empty to build from the current request. */
-define('APP_PUBLIC_URL', '');
+define('APP_PUBLIC_URL', env_value('APP_PUBLIC_URL', ''));
 
-/** Property location (public map) */
-define('PROPERTY_NAME', env_value('PROPERTY_NAME', APP_NAME));
-define('PROPERTY_ADDRESS', env_value('PROPERTY_ADDRESS', 'Kasuga Residences, Northline District, Metro Manila'));
+/** Property location (public map) — values from .env */
+$pName = env_value('PROPERTY_NAME', '');
+define('PROPERTY_NAME', $pName !== '' ? $pName : APP_NAME);
+$pAddr = env_value('PROPERTY_ADDRESS', '');
+define('PROPERTY_ADDRESS', $pAddr);
 define('PROPERTY_LAT', (float) env_value('PROPERTY_LAT', '14.5995'));
 define('PROPERTY_LNG', (float) env_value('PROPERTY_LNG', '120.9842'));
 define('PROPERTY_MAP_ZOOM', (int) env_value('PROPERTY_MAP_ZOOM', '13'));
 
-/** From address (required for SMTP; used as envelope sender). */
-define('MAIL_FROM', env_value('MAIL_FROM', 'benspngit@gmail.com'));
+define('MAIL_FROM', env_value('MAIL_FROM', ''));
+define('MAIL_FROM_NAME', env_value('MAIL_FROM_NAME', ''));
 
-/** Display name for the From header (password reset and other app mail). */
-define('MAIL_FROM_NAME', env_value('MAIL_FROM_NAME', APP_NAME));
-
-/**
- * SMTP (optional). If MAIL_SMTP_HOST is non-empty, app mail uses SMTP instead of PHP mail().
- * Examples: Gmail — host smtp.gmail.com, port 587, encryption tls, use an App Password.
- */
-define('MAIL_SMTP_HOST', env_value('MAIL_SMTP_HOST', 'smtp.gmail.com'));
+define('MAIL_SMTP_HOST', env_value('MAIL_SMTP_HOST', ''));
 define('MAIL_SMTP_PORT', (int) env_value('MAIL_SMTP_PORT', '587'));
-/** tls = STARTTLS (typical on 587), ssl = implicit TLS (typical on 465), '' = none (not recommended). */
 define('MAIL_SMTP_ENCRYPTION', strtolower(env_value('MAIL_SMTP_ENCRYPTION', 'tls')));
-define('MAIL_SMTP_USER', env_value('MAIL_SMTP_USER', 'benspngit@gmail.com'));
+define('MAIL_SMTP_USER', env_value('MAIL_SMTP_USER', ''));
 define('MAIL_SMTP_PASS', env_value('MAIL_SMTP_PASS', ''));
 
-/** Cloudflare Turnstile CAPTCHA (optional). */
-define('TURNSTILE_SITE_KEY', env_value('TURNSTILE_SITE_KEY', '1x00000000000000000000AA'));
-define('TURNSTILE_SECRET_KEY', env_value('TURNSTILE_SECRET_KEY', '1x0000000000000000000000000000000AA'));
+define('TURNSTILE_SITE_KEY', env_value('TURNSTILE_SITE_KEY', ''));
+define('TURNSTILE_SECRET_KEY', env_value('TURNSTILE_SECRET_KEY', ''));
 
-/**
- * Google reCAPTCHA v2 checkbox (optional).
- * If both site + secret keys are set, Google is used instead of Turnstile.
- * Prefer env vars RECAPTCHA_SITE_KEY / RECAPTCHA_SECRET_KEY; do not publish real secrets publicly.
- */
-define('RECAPTCHA_SITE_KEY', env_value('RECAPTCHA_SITE_KEY', '6LfhT-MsAAAAALBSuOn_6LepmmKvxS-d0v_azzes'));
-define('RECAPTCHA_SECRET_KEY', env_value('RECAPTCHA_SECRET_KEY', '6LfhT-MsAAAAADzdk_qVRqaNM6HYJkE_WwshA2wJ'));
+define('RECAPTCHA_SITE_KEY', env_value('RECAPTCHA_SITE_KEY', ''));
+define('RECAPTCHA_SECRET_KEY', env_value('RECAPTCHA_SECRET_KEY', ''));
 
 define('CAPTCHA_BYPASS_LOCAL', env_value('CAPTCHA_BYPASS_LOCAL', '0') === '1');
 
-/** Room listing gallery: max URLs in admin, max thumbnails on public cards / book page. */
-define('ROOM_GALLERY_MAX_IMAGES', 6);
-define('ROOM_GALLERY_PUBLIC_MAX', 3);
+define('ROOM_GALLERY_MAX_IMAGES', max(1, min(50, (int) env_value('ROOM_GALLERY_MAX_IMAGES', '6'))));
+define('ROOM_GALLERY_PUBLIC_MAX', max(1, min(20, (int) env_value('ROOM_GALLERY_PUBLIC_MAX', '3'))));
 
 function h(string $value): string
 {

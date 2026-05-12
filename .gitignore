@@ -1,0 +1,17 @@
+# Local / secrets
+.env
+.env.local
+.env.*.local
+
+# Composer (Railway runs `composer install` on build)
+/vendor/
+
+# Logs & cache
+*.log
+storage/logs/
+
+# OS / IDE
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/

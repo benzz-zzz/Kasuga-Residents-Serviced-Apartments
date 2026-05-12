@@ -35,7 +35,7 @@ if (is_post()) {
                     $lookup['user_id'],
                 ]);
                 $_SESSION['flash_success'] = 'Your password was updated. You can sign in now.';
-                redirect('/Apartment%20system/login.php');
+                redirect('login.php');
             }
         }
     }
@@ -47,13 +47,13 @@ require_once __DIR__ . '/includes/header.php';
     <div class="panel auth-panel auth-panel--solo panel--highlight">
         <h1 class="auth-solo__title">Set new password</h1>
         <?php if ($tokenIn === '' && !is_post()): ?>
-            <p class="form-note" style="margin-top:0">Open the link from your email, or <a href="/Apartment%20system/forgot_password.php">request a new reset</a>.</p>
+            <p class="form-note" style="margin-top:0">Open the link from your email, or <a href="<?= h(app_url('forgot_password.php')) ?>">request a new reset</a>.</p>
         <?php elseif ($lookup === null): ?>
             <?php foreach ($errors as $error): ?><div class="alert error"><?= h($error) ?></div><?php endforeach; ?>
             <?php if ($errors === []): ?>
                 <div class="alert error">This reset link is invalid or has expired.</div>
             <?php endif; ?>
-            <p class="form-footer"><a href="/Apartment%20system/forgot_password.php">Request a new link</a> · <a href="/Apartment%20system/login.php">Sign in</a></p>
+            <p class="form-footer"><a href="<?= h(app_url('forgot_password.php')) ?>">Request a new link</a> · <a href="<?= h(app_url('login.php')) ?>">Sign in</a></p>
         <?php else: ?>
             <?php foreach ($errors as $error): ?><div class="alert error"><?= h($error) ?></div><?php endforeach; ?>
             <p class="form-note" style="margin-top:0;margin-bottom:1rem">Choose a strong password. This link stops working after you save or after one hour.</p>
@@ -76,7 +76,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
                 <button type="submit" class="btn btn--primary btn--block">Update password</button>
             </form>
-            <p class="form-footer"><a href="/Apartment%20system/login.php">Back to sign in</a></p>
+            <p class="form-footer"><a href="<?= h(app_url('login.php')) ?>">Back to sign in</a></p>
         <?php endif; ?>
     </div>
 </div>
