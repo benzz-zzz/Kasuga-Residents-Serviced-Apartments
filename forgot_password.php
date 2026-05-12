@@ -28,7 +28,10 @@ if (is_post()) {
                 $raw = password_reset_issue((int) $user['id']);
                 $resetUrl = app_public_base_url() . '/reset_password.php?token=' . rawurlencode($raw);
                 if (!send_password_reset_email($email, $resetUrl)) {
-                    $errors[] = 'We could not send the email. Check PHP mail / SMTP settings, or try again later.';
+                    $hint = mail_send_last_error();
+                    $errors[] = $hint !== ''
+                        ? ('We could not send the email. ' . $hint)
+                        : 'We could not send the email. Check PHP mail / SMTP settings, or try again later.';
                 } else {
                     $_SESSION['flash_success'] = 'Check your inbox for a reset link. It expires in one hour.';
                     redirect('login.php');

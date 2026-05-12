@@ -7,8 +7,21 @@ require_once dirname(__DIR__) . '/vendor/autoload.php';
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
 use PHPMailer\PHPMailer\PHPMailer;
 
+/** Last mail failure hint for UI (no secrets). */
+function mail_send_last_error(): string
+{
+    return (string) ($GLOBALS['__mail_send_last_error'] ?? '');
+}
+
+function mail_send_set_last_error(string $message): void
+{
+    $GLOBALS['__mail_send_last_error'] = $message;
+}
+
 function send_password_reset_email(string $toEmail, string $resetUrl): bool
 {
+    $GLOBALS['__mail_send_last_error'] = '';
+
     $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
     $domain = preg_replace('/^www\./i', '', $host) ?: 'localhost';
     $fromEmail = MAIL_FROM !== '' ? MAIL_FROM : '';
@@ -45,7 +58,20 @@ function send_password_reset_email(string $toEmail, string $resetUrl): bool
     ];
     $encodedSubject = mime_encode_header($subject, true);
 
-    return @mail($toEmail, $encodedSubject, $body, implode("\r\n", $headers));
+    $ok = mail($toEmail, $encodedSubject, $body, implode("\r\n", $headers));
+    if (!$ok) {
+        $err = error_get_last();
+        $detail = is_array($err) && isset($err['message']) ? (string) $err['message'] : '';
+        error_log('[mail] mail() failed: ' . $detail);
+        $hint = 'Set MAIL_SMTP_HOST (e.g. smtp.gmail.com), MAIL_SMTP_USER, and MAIL_SMTP_PASS (Gmail App Password). PHP mail() is usually disabled on cloud hosts.';
+        if ($detail !== '') {
+            mail_send_set_last_error('PHP mail() failed: ' . $detail . ' ' . $hint);
+        } else {
+            mail_send_set_last_error($hint);
+        }
+    }
+
+    return $ok;
 }
 
 function send_via_phpmailer(string $toEmail, string $subject, string $body, string $fromEmail, string $fromName): bool
@@ -84,7 +110,18 @@ function send_via_phpmailer(string $toEmail, string $subject, string $body, stri
 
         return $mail->send();
     } catch (PHPMailerException $e) {
-        error_log('[mail] PHPMailer failed: ' . $e->getMessage());
+        $msg = $e->getMessage();
+        error_log('[mail] PHPMailer failed: ' . $msg);
+        mail_send_set_last_error(
+            'SMTP send failed. For Gmail use MAIL_SMTP_HOST=smtp.gmail.com, port 587, encryption tls, '
+            . 'MAIL_SMTP_USER=your address, MAIL_SMTP_PASS=16-char App Password, and set MAIL_FROM to the same address. '
+            . 'Details (server log): ' . substr($msg, 0, 400)
+        );
+
+        return false;
+    } catch (\Throwable $e) {
+        error_log('[mail] PHPMailer error: ' . $e->getMessage());
+        mail_send_set_last_error('SMTP error: ' . substr($e->getMessage(), 0, 400));
 
         return false;
     }
