@@ -19,21 +19,28 @@ session_start();
 /**
  * Read environment variable. Order: real process env first (Railway / Docker inject here via getenv),
  * then Dotenv-populated $_ENV / $_SERVER, then default.
+ * Strips wrapping double quotes (common when pasting KEY="value" into Railway).
  */
 function env_value(string $key, string $default = ''): string
 {
+    $raw = '';
     $g = getenv($key);
     if ($g !== false) {
-        return trim((string) $g);
-    }
-    if (array_key_exists($key, $_ENV)) {
-        return trim((string) $_ENV[$key]);
-    }
-    if (array_key_exists($key, $_SERVER) && !str_starts_with($key, 'HTTP_')) {
-        return trim((string) $_SERVER[$key]);
+        $raw = (string) $g;
+    } elseif (array_key_exists($key, $_ENV)) {
+        $raw = (string) $_ENV[$key];
+    } elseif (array_key_exists($key, $_SERVER) && !str_starts_with($key, 'HTTP_')) {
+        $raw = (string) $_SERVER[$key];
+    } else {
+        return $default;
     }
 
-    return $default;
+    $raw = trim($raw);
+    if ($raw !== '' && strlen($raw) >= 2 && $raw[0] === '"' && $raw[strlen($raw) - 1] === '"') {
+        $raw = stripcslashes(substr($raw, 1, -1));
+    }
+
+    return trim($raw);
 }
 
 /**
@@ -44,6 +51,10 @@ function env_value(string $key, string $default = ''): string
 function mysql_connection_from_env(): array
 {
     $url = env_value('MYSQL_URL', '');
+    // Unresolved Railway reference (copy-paste / deploy order) — use discrete MYSQL_* / DB_* instead
+    if ($url !== '' && str_contains($url, '${{')) {
+        $url = '';
+    }
     if ($url !== '') {
         $normalized = preg_replace('#^mysql2:#', 'mysql:', $url, 1) ?? $url;
         if (str_starts_with($normalized, 'mysql://')) {
