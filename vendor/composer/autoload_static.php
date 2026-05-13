@@ -106,7 +106,6 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         'P' =>
         array (
             'PhpOption\\' => 10,
-            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'M' =>
         array (
@@ -151,10 +150,6 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         'PhpOption\\' =>
         array (
             0 => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption',
-        ),
-        'PHPMailer\\PHPMailer\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
         'Masterminds\\' =>
         array (

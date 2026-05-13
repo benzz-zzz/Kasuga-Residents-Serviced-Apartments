@@ -119,11 +119,8 @@ define('PROPERTY_MAP_ZOOM', (int) env_value('PROPERTY_MAP_ZOOM', '13'));
 define('MAIL_FROM', env_value('MAIL_FROM', ''));
 define('MAIL_FROM_NAME', env_value('MAIL_FROM_NAME', ''));
 
-define('MAIL_SMTP_HOST', env_value('MAIL_SMTP_HOST', ''));
-define('MAIL_SMTP_PORT', (int) env_value('MAIL_SMTP_PORT', '587'));
-define('MAIL_SMTP_ENCRYPTION', strtolower(env_value('MAIL_SMTP_ENCRYPTION', 'tls')));
-define('MAIL_SMTP_USER', env_value('MAIL_SMTP_USER', ''));
-define('MAIL_SMTP_PASS', env_value('MAIL_SMTP_PASS', ''));
+/** Brevo transactional API — https://api.brevo.com/v3/smtp/email */
+define('BREVO_API_KEY', env_value('BREVO_API_KEY', ''));
 
 define('TURNSTILE_SITE_KEY', env_value('TURNSTILE_SITE_KEY', ''));
 define('TURNSTILE_SECRET_KEY', env_value('TURNSTILE_SECRET_KEY', ''));
