@@ -25,6 +25,10 @@ function db(): PDO
         PDO::ATTR_EMULATE_PREPARES => false,
     ];
 
+    // Avoid long hangs (504) if MySQL host/port is wrong or network blocks — default socket can wait minutes.
+    $prevSocketTimeout = ini_get('default_socket_timeout');
+    ini_set('default_socket_timeout', '12');
+
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts);
         $pdo->exec('SET SESSION group_concat_max_len = 131072');
@@ -38,6 +42,12 @@ function db(): PDO
             throw $e;
         }
         $pdo->exec('SET SESSION group_concat_max_len = 131072');
+    } finally {
+        if ($prevSocketTimeout !== false && $prevSocketTimeout !== '') {
+            ini_set('default_socket_timeout', (string) $prevSocketTimeout);
+        } else {
+            ini_restore('default_socket_timeout');
+        }
     }
 
     $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");
@@ -163,6 +173,7 @@ function bootstrap_db(PDO $pdo): void
 
     ensure_booking_removal_archive_table($pdo);
     ensure_password_reset_tokens_table($pdo);
+    ensure_login_otp_challenges_table($pdo);
     ensure_admin_notification_reads_table($pdo);
 
     seed_defaults($pdo);
@@ -438,6 +449,25 @@ function ensure_password_reset_tokens_table(PDO $pdo): void
             KEY idx_password_reset_user (user_id),
             KEY idx_password_reset_expires (expires_at),
             CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+}
+
+/** Short-lived email OTP after correct password (hashed at rest). */
+function ensure_login_otp_challenges_table(PDO $pdo): void
+{
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS login_otp_challenges (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id INT UNSIGNED NOT NULL,
+            code_hash VARCHAR(255) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            KEY idx_login_otp_user (user_id),
+            KEY idx_login_otp_expires (expires_at),
+            CONSTRAINT fk_login_otp_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 }

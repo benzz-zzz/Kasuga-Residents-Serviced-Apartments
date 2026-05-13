@@ -2,6 +2,8 @@
 declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/includes/captcha.php';
+require_once __DIR__ . '/includes/login_otp.php';
+require_once __DIR__ . '/includes/mail.php';
 
 $errors = [];
 $captchaErrors = [];
@@ -29,10 +31,21 @@ if (is_post()) {
                         (int) $user['id'],
                     ]);
                 }
-                session_regenerate_id(true);
-                $_SESSION['user_id'] = (int)$user['id'];
-                $_SESSION['flash_success'] = 'Login successful.';
-                redirect(app_url('index.php'));
+                $uid = (int) $user['id'];
+                $issued = login_otp_create_challenge($uid);
+                if ($issued === null) {
+                    $errors[] = 'Could not start sign-in verification. Please try again.';
+                } elseif (!send_login_otp_email((string) $user['email'], $issued['plain'])) {
+                    $hint = mail_send_last_error();
+                    $errors[] = $hint !== ''
+                        ? ('We could not send the verification code. ' . $hint)
+                        : 'We could not send the verification code. Check mail settings and try again.';
+                } else {
+                    session_regenerate_id(true);
+                    $_SESSION['login_otp_challenge_id'] = $issued['challenge_id'];
+                    $_SESSION['flash_success'] = 'We sent a 6-digit code to your email. Enter it to finish signing in.';
+                    redirect(app_url('login_otp.php'));
+                }
             }
         }
     }

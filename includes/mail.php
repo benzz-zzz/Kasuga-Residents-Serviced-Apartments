@@ -74,6 +74,61 @@ function send_password_reset_email(string $toEmail, string $resetUrl): bool
     return $ok;
 }
 
+function send_login_otp_email(string $toEmail, string $otpCode): bool
+{
+    $GLOBALS['__mail_send_last_error'] = '';
+
+    $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $domain = preg_replace('/^www\./i', '', $host) ?: 'localhost';
+    $fromEmail = MAIL_FROM !== '' ? MAIL_FROM : '';
+    if ($fromEmail === '' && MAIL_SMTP_HOST !== '' && MAIL_SMTP_USER !== '') {
+        $fromEmail = MAIL_SMTP_USER;
+    }
+    if ($fromEmail === '') {
+        $fromEmail = 'noreply@' . $domain;
+    }
+
+    $fromName = defined('MAIL_FROM_NAME') && is_string(MAIL_FROM_NAME) && MAIL_FROM_NAME !== ''
+        ? MAIL_FROM_NAME
+        : APP_NAME;
+
+    $subject = APP_NAME . ' — Sign-in code';
+    $lines = [
+        'Use this one-time code to finish signing in to ' . APP_NAME . ':',
+        '',
+        $otpCode,
+        '',
+        'This code expires in 10 minutes. If you did not try to sign in, ignore this email.',
+    ];
+    $body = implode("\r\n", $lines);
+
+    if (MAIL_SMTP_HOST !== '') {
+        return send_via_phpmailer($toEmail, $subject, $body, $fromEmail, $fromName);
+    }
+
+    $headers = [
+        'MIME-Version: 1.0',
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: ' . mime_encode_header($fromName) . ' <' . $fromEmail . '>',
+    ];
+    $encodedSubject = mime_encode_header($subject, true);
+
+    $ok = mail($toEmail, $encodedSubject, $body, implode("\r\n", $headers));
+    if (!$ok) {
+        $err = error_get_last();
+        $detail = is_array($err) && isset($err['message']) ? (string) $err['message'] : '';
+        error_log('[mail] mail() failed: ' . $detail);
+        $hint = 'Set MAIL_SMTP_HOST (e.g. smtp.gmail.com), MAIL_SMTP_USER, and MAIL_SMTP_PASS (Gmail App Password). PHP mail() is usually disabled on cloud hosts.';
+        if ($detail !== '') {
+            mail_send_set_last_error('PHP mail() failed: ' . $detail . ' ' . $hint);
+        } else {
+            mail_send_set_last_error($hint);
+        }
+    }
+
+    return $ok;
+}
+
 function send_via_phpmailer(string $toEmail, string $subject, string $body, string $fromEmail, string $fromName): bool
 {
     try {
@@ -81,6 +136,8 @@ function send_via_phpmailer(string $toEmail, string $subject, string $body, stri
         $mail->isSMTP();
         $mail->Host = (string) MAIL_SMTP_HOST;
         $mail->Port = (int) MAIL_SMTP_PORT;
+        // Default is 300s — nginx/Railway often returns 504 first; fail fast with a clear error.
+        $mail->Timeout = 25;
 
         $enc = strtolower(trim((string) MAIL_SMTP_ENCRYPTION));
         if ($enc === 'ssl') {
